@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flappy Bird Neon</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      background: #0f0f0f;
+      overflow: hidden;
+      font-family: 'Segoe UI', sans-serif;
+    }
+    canvas {
+      display: block;
+      margin: auto;
+      background: radial-gradient(circle, #111, #000);
+      border: 2px solid #0ff;
+      box-shadow: 0 0 20px #0ff;
+    }
+  </style>
+</head>
+<body>
+<canvas id="gameCanvas" width="400" height="600"></canvas>
+<script>
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+
+  let frames = 0;
+  const DEGREE = Math.PI / 180;
+
+  const bird = {
+    x: 50,
+    y: 150,
+    width: 30,
+    height: 30,
+    gravity: 0.25,
+    lift: -5,
+    velocity: 0,
+    draw() {
+      ctx.fillStyle = '#ff0';
+      ctx.shadowBlur = 15;
+      ctx.shadowColor = '#ff0';
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.width / 2, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    },
+    update() {
+      this.velocity += this.gravity;
+      this.y += this.velocity;
+      if (this.y + this.height / 2 >= canvas.height) {
+        this.y = canvas.height - this.height / 2;
+        this.velocity = 0;
+      }
+      if (this.y <= 0) {
+        this.y = 0;
+        this.velocity = 0;
+      }
+    },
+    flap() {
+      this.velocity = this.lift;
+    }
+  };
+
+  const pipes = [];
+  const pipeWidth = 60;
+  const gap = 120;
+
+  function createPipe() {
+    let top = Math.floor(Math.random() * (canvas.height / 2));
+    pipes.push({
+      x: canvas.width,
+      y: top,
+      passed: false
+    });
+  }
+
+  function drawPipes() {
+    ctx.fillStyle = '#0ff';
+    ctx.shadowBlur = 15;
+    ctx.shadowColor = '#0ff';
+    for (let i = 0; i < pipes.length; i++) {
+      let p = pipes[i];
+      ctx.fillRect(p.x, 0, pipeWidth, p.y);
+      ctx.fillRect(p.x, p.y + gap, pipeWidth, canvas.height);
+    }
+    ctx.shadowBlur = 0;
+  }
+
+  function updatePipes() {
+    for (let i = 0; i < pipes.length; i++) {
+      let p = pipes[i];
+      p.x -= 2;
+      if (!p.passed && bird.x > p.x + pipeWidth) {
+        p.passed = true;
+        score++;
+      }
+      if (
+        bird.x + bird.width / 2 > p.x &&
+        bird.x - bird.width / 2 < p.x + pipeWidth &&
+        (bird.y - bird.height / 2 < p.y || bird.y + bird.height / 2 > p.y + gap)
+      ) {
+        location.reload();
+      }
+    }
+    if (pipes.length && pipes[0].x + pipeWidth < 0) pipes.shift();
+  }
+
+  let score = 0;
+  function drawScore() {
+    ctx.fillStyle = '#fff';
+    ctx.font = '30px monospace';
+    ctx.fillText(`Score: ${score}`, 10, 40);
+  }
+
+  function loop() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    bird.update();
+    bird.draw();
+
+    if (frames % 100 === 0) createPipe();
+    drawPipes();
+    updatePipes();
+
+    drawScore();
+
+    frames++;
+    requestAnimationFrame(loop);
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.code === 'Space') bird.flap();
+  });
+  document.addEventListener('click', () => bird.flap());
+
+  loop();
+</script>
+</body>
+</html>
